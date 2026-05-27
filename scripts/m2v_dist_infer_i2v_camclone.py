@@ -231,7 +231,13 @@ if __name__ == "__main__":
         --test_dir /video/zhengmingwu/m2v-diffusers/outputs/m2v_output/102_mvb_10b_8mstep_video \
         --num_frames 77 \
     """
-
+    import debugpy
+    import os
+    if int(os.environ.get("RANK", 0)) == 0:
+        debugpy.listen(("0.0.0.0", 5678))
+        print("⏳ Waiting for debugger attach on port 5678...")
+        debugpy.wait_for_client()
+        print("✅ Debugger attached!")
     set_environments()
     yaml_path = deepcopy(sys.argv[1])
     del sys.argv[1]

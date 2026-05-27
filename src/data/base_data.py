@@ -631,9 +631,21 @@ class Data:
                 )
         elif self.video_path_column and self.ref_path_column and self.content_ref_path_column:  # rgb video & ref video & content ref video
             with measure_time("DATA_Video_Ref_Video_Content_Video", self.config.measure_time, timer=self.timer, verbose=False):
-                video_paths = items[self.video_path_column]
-                ref_video_paths = items[self.ref_path_column]
-                content_ref_video_paths = items[self.content_ref_path_column]
+                
+                def _parse_path(p):
+                    if isinstance(p, str) and p.strip().startswith('[') and p.strip().endswith(']'):
+                        try:
+                            import json
+                            parsed = json.loads(p)
+                            if isinstance(parsed, list) and len(parsed) > 0 and isinstance(parsed[0], dict) and "value" in parsed[0]:
+                                return parsed[0]["value"]
+                        except:
+                            pass
+                    return p
+                
+                video_paths = [_parse_path(p) for p in items[self.video_path_column]]
+                ref_video_paths = [_parse_path(p) for p in items[self.ref_path_column]]
+                content_ref_video_paths = [_parse_path(p) for p in items[self.content_ref_path_column]]
                 videos = []
                 ref_videos = []
                 content_ref_videos = []
