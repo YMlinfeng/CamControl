@@ -971,32 +971,44 @@ class Data:
                 frame_tensors_all.append(frames_chunk)
             frames = torch.cat(frame_tensors_all, dim=0)
 
-            if ref_path and ".mp4" in ref_path:
-                ref_frame_tensors_all = []
-                for i in range(0, len(frame_indexes), self.config.gpu_read_chunk_size):
-                    frame_indexes_chunk = frame_indexes[i : i + self.config.gpu_read_chunk_size]
-                    frames_chunk = ref_reader.get_batch(frame_indexes_chunk)
-                    ref_frame_tensors_all.append(frames_chunk)
-                ref_frames = torch.cat(ref_frame_tensors_all, dim=0)
+            if ref_path:
+                if ".mp4" in ref_path:
+                    ref_frame_tensors_all = []
+                    for i in range(0, len(frame_indexes), self.config.gpu_read_chunk_size):
+                        frame_indexes_chunk = frame_indexes[i : i + self.config.gpu_read_chunk_size]
+                        frames_chunk = ref_reader.get_batch(frame_indexes_chunk)
+                        ref_frame_tensors_all.append(frames_chunk)
+                    ref_frames = torch.cat(ref_frame_tensors_all, dim=0)
+                else:
+                    ref_frames = self.read_image(ref_path)
 
-            if content_ref_path and ".mp4" in content_ref_path:
-                content_ref_frame_tensors_all = []
-                for i in range(0, len(frame_indexes), self.config.gpu_read_chunk_size):
-                    frame_indexes_chunk = frame_indexes[i : i + self.config.gpu_read_chunk_size]
-                    frames_chunk = content_ref_reader.get_batch(frame_indexes_chunk)
-                    content_ref_frame_tensors_all.append(frames_chunk)
-                content_ref_frames = torch.cat(content_ref_frame_tensors_all, dim=0)
+            if content_ref_path:
+                if ".mp4" in content_ref_path:
+                    content_ref_frame_tensors_all = []
+                    for i in range(0, len(frame_indexes), self.config.gpu_read_chunk_size):
+                        frame_indexes_chunk = frame_indexes[i : i + self.config.gpu_read_chunk_size]
+                        frames_chunk = content_ref_reader.get_batch(frame_indexes_chunk)
+                        content_ref_frame_tensors_all.append(frames_chunk)
+                    content_ref_frames = torch.cat(content_ref_frame_tensors_all, dim=0)
+                else:
+                    content_ref_frames = self.read_image(content_ref_path)
 
         else:
             frames = reader.get_batch(frame_indexes)
-            if ref_path and ".mp4" in ref_path:
-                ref_frames = ref_reader.get_batch(frame_indexes)
-            if content_ref_path and ".mp4" in content_ref_path:
-                content_ref_frames = content_ref_reader.get_batch(frame_indexes)
+            if ref_path:
+                if ".mp4" in ref_path:
+                    ref_frames = ref_reader.get_batch(frame_indexes)
+                else:
+                    ref_frames = self.read_image(ref_path)
+            if content_ref_path:
+                if ".mp4" in content_ref_path:
+                    content_ref_frames = content_ref_reader.get_batch(frame_indexes)
+                else:
+                    content_ref_frames = self.read_image(content_ref_path)
         
-        if ref_path and ".mp4" in ref_path and not content_ref_path:
+        if ref_path and not content_ref_path:
             return frames, ref_frames, start_frame, frame_stride, fps, duration, (height, width)
-        elif ref_path and ".mp4" in ref_path and content_ref_path and ".mp4" in content_ref_path:
+        elif ref_path and content_ref_path:
             return frames, ref_frames, content_ref_frames, start_frame, frame_stride, fps, duration, (height, width)
         else:     
             return frames, start_frame, frame_stride, fps, duration, (height, width)

@@ -1,0 +1,445 @@
+!!python/object:src.engine.trainer.TrainerConfig
+_target: !!python/name:src.engine.trainer.Trainer ''
+add_skipped_step: 0
+aux_data: !!python/object:src.data.base_data.DataConfig
+  _target: &id001 !!python/name:src.data.base_data.Data ''
+  batch_size: 160
+  cache_dir: /m2v_intern/luoyawen/cache/csv
+  caption_column: null
+  class_id_to_num: /video/pansiyuan/data/ImageNet_class_to_id.json
+  class_labels_column: null
+  clip_prompt_embed_column: null
+  condition_image_path_column: null
+  content_ref_path_column: null
+  control_columns: null
+  crop_type: null
+  gpu_decode: false
+  gpu_read_chunk_size: null
+  height: 512
+  image_latent_path_column: null
+  image_path_column: null
+  index_column: null
+  latent_path_column: null
+  max_aspect_ratio: 1.7777777777777777
+  max_duration: null
+  max_fps: 60
+  max_frame_stride: 9223372036854775807
+  measure_time: false
+  motion_bucket_id_column: null
+  num_frames: 1
+  num_processes: 4
+  num_samples: null
+  path: /ytech_m2v2_hdd/m2v_data/data_version/image_hq_v2_0510.csv
+  random_flip: false
+  random_num_frames: false
+  ref_path_column: null
+  resize_video: true
+  sample_fps: 8
+  sample_position: first
+  sample_stride: 4
+  sample_type: fps
+  shuffle: false
+  spatial_patch_size: 2
+  spatial_token_merge_size: 2
+  t5_prompt_embed_column: null
+  temporal_patch_size: 1
+  temporal_token_merge_size: null
+  use_determinstic_dataset: false
+  use_pyvips: false
+  vae_spatial_scale_factor: 8
+  vae_temporal_scale_factor: 4
+  video_path_column: null
+  width: 512
+data_per_ema: 800000
+data_per_save: 500000
+data_per_val: 500000
+deepspeed: src/engine/zero_stage2_config.json
+delete_deepspeed_weights: false
+ema_decay: 0.9999
+ema_start_step: 0
+experiment_name: 0016--1b_camclonemaster_node_12
+git_commit: 8ef810593d750914285576d4bfc4d0d3717c8e60
+gradient_accumulation_steps: 1
+height: null
+joint_train_prob: 0
+max_steps: 12034000
+measure_time: false
+nontrainable_modules: []
+num_epochs: 1000
+num_frames: null
+num_valloss_timesteps: 20
+optimizer: !!python/object:src.engine.optimizers.AdamWOptimizerConfig
+  _target: !!python/name:torch.optim.adamw.AdamW ''
+  betas: !!python/tuple
+  - 0.9
+  - 0.999
+  eps: 1.0e-08
+  fused: true
+  lr: 5.0e-05
+  max_grad_norm: 0.1
+  scale_lr: false
+  weight_decay: 0.01
+output_dir: !!python/object/apply:pathlib.PosixPath
+- exps
+pipeline: !!python/object:src.pipelines.t2v_pipeline_flow_camclonemaster.T2VFlowPipelineCamCloneMasterConfig
+  _target: !!python/name:src.pipelines.t2v_pipeline_flow_camclonemaster.T2VFlowCamCloneMasterPipeline ''
+  call:
+    fps: 15
+    guidance_scale: 12.5
+    height: 512
+    negative_prompt: animation, 2d animation, 3d animation, Anime, Cartoon
+    num_frames: 77
+    num_inference_steps: 50
+    width: 512
+  camclone_ratio: 0.5
+  ckpt_path: /m2v_intern/luoyawen/cache/PixArt-XL-2-512x512
+  clip_ckpt_path: null
+  content_ref_video_column_name: content_ref_data
+  diffusers_vae_ckpt_path: null
+  distributed_clip: false
+  edm_config: null
+  enable_vae_slicing: true
+  endfix_prompt: null
+  epsilon: 0.001
+  logit_normal: true
+  match_snr: false
+  max_sequence_length: 512
+  measure_time: false
+  noise_offset: null
+  offload: true
+  proportion_empty_prompts: 0.1
+  ref_video_column_name: ref_data
+  scheduler_kwargs:
+    _class_name: PNDMScheduler
+    beta_end: 0.02
+    beta_schedule: linear
+    beta_start: 0.0001
+    variance_type: learned_range
+  seed: 666
+  t2v_ratio: 1.0
+  target: null
+  text_encoder_config: null
+  timestep_shift: 1.0
+  transformer_config: !!python/object:src.models.transformers.transformer_xl.TransformerXLModelConfig
+    _target: !!python/name:src.models.transformers.transformer_xl.TransformerXLModel ''
+    attention_head_dim: null
+    cross_attention_dim: 2880
+    ffn_scale: 1.0
+    from_scratch: true
+    gradient_checkpointing: true
+    height: 672
+    image_temp_attn: true
+    in_channels: 8
+    num_attention_heads: 40
+    num_frames: 77
+    num_layers: 40
+    out_channels: 8
+    patch_size: 2
+    qk_norm: true
+    resolution: !!python/tuple
+    - 16
+    - 32
+    - 32
+    split_conditions: true
+    temporal_attention_config: !!python/object:src.models.transformers.transformer_xl.TemporalAttentionConfig
+      attn_type: stfit
+      neighbourhood_attn_dilation_size: !!python/tuple
+      - 1
+      - 1
+      - 1
+      neighbourhood_attn_window_size: !!python/tuple
+      - 5
+      - 5
+      - 5
+      stfit_latent_dims_scale: 1
+      stfit_patch_size: !!python/tuple
+      - 1
+      - 2
+      - 2
+      theta_3d_rope: 10000.0
+      use_3d_rope: true
+    theta_1d_rope: 100.0
+    theta_2d_rope: 100.0
+    transformer_ckpt_path: /m2v_intern/luoyawen/Coding/Kelin/m2v_camclone_v2/exps/0000-1b-camclone-base/1b-camclone-base.ckpt
+    use_1d_rope: true
+    use_2d_rope: true
+    use_additional_conditions: false
+    use_aspect_ratio_condition: false
+    use_flash_attn: true
+    use_fps_condition: false
+    use_frames_condition: true
+    use_resolution_condition: true
+    use_temp_attn: true
+    use_text_condition: false
+    vae_scale_factor: 8
+    vae_temporal_scale_factor: 4
+    width: 672
+  unet_config: null
+  vae_config: !!python/object:src.models.autoencoders.visual_tokenizer.VisualTokenizerConfig
+    _target: !!python/name:src.models.autoencoders.visual_tokenizer.VisualTokenizer ''
+    block_out_channels: !!python/tuple
+    - 128
+    - 256
+    - 512
+    - 512
+    channels: 3
+    decoder_init_dim: 128
+    encoder_init_dim: 32
+    encoder_type: Standard Convolution
+    gradient_checkpointing: false
+    num_channels_out: 8
+    num_groups: 32
+    output_conv_kernel_size: !!python/tuple
+    - 3
+    - 3
+    - 3
+    pad_mode: constant
+    post_process: true
+    scaling_factor: 0.3414321773546459
+    segment_size: 9223372036854775807
+    split_conv_3d: true
+    stride: 2
+    temporal_scale_factor: 4
+    use_2plus1d: false
+    vae_ckpt_path: /m2v_intern/luoyawen/cache/tiny_vae/tinyvae.ckpt
+    vae_pattern: b c f h w
+relative_ckpt_dir: !!python/object/apply:pathlib.PosixPath
+- ckpts
+resume: false
+resume_ckpt_path: null
+resume_no_skip: false
+save_ema: false
+scheduler: !!python/object:src.engine.schedulers.SchedulerConfig
+  name: constant
+  num_warmup_steps: null
+  num_warmup_steps_rate: null
+seed: 1746013332
+skip_aux_data: null
+skip_train_data: null
+stability: !!python/object:src.engine.stability.StabilityConfig
+  anomaly_times: 5
+  consecutive_anomalies_steps: 100
+  loss_median_window: 10
+  skip_steps: 1
+  stability_protection: true
+step_per_ema: 1
+step_per_measure_time: 1
+step_per_save: 250
+step_per_tb: 1
+step_per_val: 9223372036854775807
+step_per_valloss: null
+step_per_valmetrics: null
+tb_add_image: false
+tb_add_video: false
+timestamp: 2025-04-30_194212
+train_data: !!python/object:src.data.base_data.DataConfig
+  _target: *id001
+  batch_size: 1
+  cache_dir: /m2v_intern/luoyawen/cache/csv
+  caption_column: caption # todo:caption
+  class_id_to_num: /video/pansiyuan/data/ImageNet_class_to_id.json
+  class_labels_column: null
+  clip_prompt_embed_column: null
+  condition_image_path_column: null
+  content_ref_path_column: content_video_path
+  control_columns: null
+  crop_type: null
+  gpu_decode: false
+  gpu_read_chunk_size: null
+  height: 512
+  image_latent_path_column: null
+  image_path_column: null
+  index_column: null
+  latent_path_column: null
+  max_aspect_ratio: 1.7777777777777777
+  max_duration: null
+  max_fps: 60
+  max_frame_stride: 9223372036854775807
+  measure_time: false
+  motion_bucket_id_column: null
+  num_frames: 77
+  num_processes: 1
+  num_samples: null
+  path: /m2v_intern/public_datasets/Camera_Dataset/Csv/0413_recam_all_filtered.csv
+  random_flip: false
+  random_num_frames: false
+  ref_path_column: ref_video_path
+  resize_video: true
+  sample_fps: 15
+  sample_position: random
+  sample_stride: 4
+  sample_type: fps
+  shuffle: false
+  spatial_patch_size: 2
+  spatial_token_merge_size: 2
+  t5_prompt_embed_column: null
+  temporal_patch_size: 1
+  temporal_token_merge_size: null
+  use_determinstic_dataset: false
+  use_pyvips: false
+  vae_spatial_scale_factor: 8
+  vae_temporal_scale_factor: 4
+  video_path_column: video_path
+  width: 512
+trainable_modules:
+- transformer
+trainable_only_layers: attnt
+training_precision: bf16
+unet_ckpt_path: null
+use_ema: true
+val_at_begin: false
+val_data: !!python/object:src.data.base_data.DataConfig
+  _target: *id001
+  batch_size: 1
+  cache_dir: /m2v_intern/luoyawen/cache/csv
+  caption_column: llama_caption
+  class_id_to_num: /video/pansiyuan/data/ImageNet_class_to_id.json
+  class_labels_column: null
+  clip_prompt_embed_column: null
+  condition_image_path_column: null
+  content_ref_path_column: null
+  control_columns: null
+  crop_type: center
+  gpu_decode: false
+  gpu_read_chunk_size: null
+  height: 512
+  image_latent_path_column: null
+  image_path_column: null
+  index_column: null
+  latent_path_column: null
+  max_aspect_ratio: 1.7777777777777777
+  max_duration: null
+  max_fps: 60
+  max_frame_stride: 9223372036854775807
+  measure_time: false
+  motion_bucket_id_column: null
+  num_frames: 77
+  num_processes: 1
+  num_samples: 16
+  path: /m2v_intern/luoyawen/Dataset/val_data.csv
+  random_flip: false
+  random_num_frames: false
+  ref_path_column: null
+  resize_video: true
+  sample_fps: 15
+  sample_position: first
+  sample_stride: 4
+  sample_type: fps
+  shuffle: false
+  spatial_patch_size: 2
+  spatial_token_merge_size: 2
+  t5_prompt_embed_column: null
+  temporal_patch_size: 1
+  temporal_token_merge_size: null
+  use_determinstic_dataset: false
+  use_pyvips: false
+  vae_spatial_scale_factor: 8
+  vae_temporal_scale_factor: 4
+  video_path_column: null
+  width: 512
+val_types:
+- t2v
+- t2v_16_9
+- t2v_9_16
+valloss_at_begin: false
+valloss_data: !!python/object:src.data.base_data.DataConfig
+  _target: *id001
+  batch_size: 1
+  cache_dir: /group/gaoyuan/huggingface/datasets
+  caption_column: null
+  class_id_to_num: /video/pansiyuan/data/ImageNet_class_to_id.json
+  class_labels_column: null
+  clip_prompt_embed_column: null
+  condition_image_path_column: null
+  content_ref_path_column: null
+  control_columns: null
+  crop_type: center
+  gpu_decode: false
+  gpu_read_chunk_size: null
+  height: 512
+  image_latent_path_column: null
+  image_path_column: null
+  index_column: null
+  latent_path_column: null
+  max_aspect_ratio: 1.7777777777777777
+  max_duration: null
+  max_fps: 60
+  max_frame_stride: 9223372036854775807
+  measure_time: false
+  motion_bucket_id_column: null
+  num_frames: 16
+  num_processes: 1
+  num_samples: 1
+  path: null
+  random_flip: false
+  random_num_frames: false
+  ref_path_column: null
+  resize_video: true
+  sample_fps: 8
+  sample_position: first
+  sample_stride: 4
+  sample_type: fps
+  shuffle: true
+  spatial_patch_size: 2
+  spatial_token_merge_size: null
+  t5_prompt_embed_column: null
+  temporal_patch_size: 1
+  temporal_token_merge_size: null
+  use_determinstic_dataset: false
+  use_pyvips: false
+  vae_spatial_scale_factor: 8
+  vae_temporal_scale_factor: 4
+  video_path_column: null
+  width: 512
+valmetrics_at_begin: false
+valmetrics_data: !!python/object:src.data.base_data.DataConfig
+  _target: *id001
+  batch_size: 1
+  cache_dir: /m2v_intern/luoyawen/cache/csv
+  caption_column: llama_caption
+  class_id_to_num: /video/pansiyuan/data/ImageNet_class_to_id.json
+  class_labels_column: null
+  clip_prompt_embed_column: null
+  condition_image_path_column: null
+  content_ref_path_column: null
+  control_columns: null
+  crop_type: center
+  gpu_decode: false
+  gpu_read_chunk_size: null
+  height: 512
+  image_latent_path_column: null
+  image_path_column: null
+  index_column: null
+  latent_path_column: null
+  max_aspect_ratio: 1.7777777777777777
+  max_duration: null
+  max_fps: 60
+  max_frame_stride: 9223372036854775807
+  measure_time: false
+  motion_bucket_id_column: null
+  num_frames: 77
+  num_processes: 1
+  num_samples: null
+  path: /m2v_intern/luoyawen/Dataset/qa150_recaption_llama8b_wo_sft_raw_0509_v1.csv
+  random_flip: false
+  random_num_frames: false
+  ref_path_column: null
+  resize_video: true
+  sample_fps: 15
+  sample_position: first
+  sample_stride: 4
+  sample_type: fps
+  shuffle: false
+  spatial_patch_size: 2
+  spatial_token_merge_size: 2
+  t5_prompt_embed_column: null
+  temporal_patch_size: 1
+  temporal_token_merge_size: null
+  use_determinstic_dataset: false
+  use_pyvips: false
+  vae_spatial_scale_factor: 8
+  vae_temporal_scale_factor: 4
+  video_path_column: null
+  width: 512
+verbose: false
+width: null
