@@ -15,7 +15,7 @@ for SUBDIR_NAME in "${SUBDIR_LIST[@]}"; do
 
         bash scripts/dist_run.sh \
             python scripts/m2v_dist_infer_i2v_camclone.py \
-            /m2v_intern2/luoyawen/m2v_camclone_v2/exps/0016--1b_camclonemaster_node_12/config.yml \
+            exps/0016--1b_camclonemaster_node_12/config.yml \
             --data.path /m2v_intern/public_datasets/Camera_Dataset/Testset/Csv/testset/testset_3_arc_left.csv \
             --data.t5_prompt_embed_column None \
             --data.caption_column caption \
