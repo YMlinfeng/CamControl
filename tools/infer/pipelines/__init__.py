@@ -1,0 +1,20 @@
+from .base_pipeline import BasePipelineConfig, EDMTrainConfig
+from .i2v_svd_pipeline import I2VSVDPipeline, I2VSVDPipelineConfig
+from .t2i_dit_pipeline import T2IDitPipeline, T2IDitPipelineConfig
+from .t2v_pipeline import T2VPipeline, T2VPipelineConfig
+from .t2v_pipeline_flow import T2VFlowPipeline, T2VFlowPipelineConfig
+from .t2v_pipeline_pixart_alpha import T2VPixArtAlphaPipeline, T2VPixArtAlphaPipelineConfig
+from .t2v_pipeline_xl import T2VXLPipeline, T2VXLPipelineConfig
+from .t2v_svd_pipeline import T2VSVDPipeline, T2VSVDPipelineConfig
+from .visual_tokenizer_pipeline import VisualTokenizerPipeline, VisualTokenizerPipelineConfig
+
+# add for camclone and recamclone
+from .t2v_pipeline_flow_camclonemaster import T2VFlowPipelineCamCloneMasterConfig, T2VFlowCamCloneMasterPipeline
+# add for channel concat
+from .t2v_pipeline_flow_channelconcat import T2VFlowPipelineChannelConcatConfig, T2VFlowChannelConcatPipeline
+# add for only concat in temporal layer
+from .t2v_pipeline_flow_only_temporal_layer import T2VFlowPipelineOnlyTemporalConfig, T2VFlowOnlyTemporalPipeline
+# add for controlnet
+from .t2v_pipeline_flow_controlnet import T2VFlowPipelineControlNetConfig, T2VFlowControlNetPipeline
+# add for 
+from .t2v_pipeline_flow_camclone_RT import T2VFlowCamCloneRTPipelineConfig, T2VFlowCamCloneRTPipeline

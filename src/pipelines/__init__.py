@@ -1,0 +1,12 @@
+from .base_pipeline import BasePipelineConfig, EDMTrainConfig
+from .i2v_svd_pipeline import I2VSVDPipeline, I2VSVDPipelineConfig
+from .t2i_dit_pipeline import T2IDitPipeline, T2IDitPipelineConfig
+from .t2v_pipeline import T2VPipeline, T2VPipelineConfig
+from .t2v_pipeline_flow import T2VFlowPipeline, T2VFlowPipelineConfig
+from .t2v_pipeline_pixart_alpha import T2VPixArtAlphaPipeline, T2VPixArtAlphaPipelineConfig
+from .t2v_pipeline_xl import T2VXLPipeline, T2VXLPipelineConfig
+from .t2v_svd_pipeline import T2VSVDPipeline, T2VSVDPipelineConfig
+from .visual_tokenizer_pipeline import VisualTokenizerPipeline, VisualTokenizerPipelineConfig
+
+# add for camclone and recamclone
+from .t2v_pipeline_flow_camclonemaster import T2VFlowPipelineCamCloneMasterConfig, T2VFlowCamCloneMasterPipeline
