@@ -1,3 +1,13 @@
+xet
+eval
+hub
+gsb_eval
+test_dir
+eval_results.db
+npz
+synthetic_npz*
+VBench
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -850,12 +850,17 @@ class Data:
 
         return return_dict
 
-    def read_image(self, path):
+    def read_image(self, path, resize_width=None, resize_height=None):
         # BUG for pyvips, set use_pyvips = False by default
         if self.config.use_pyvips and pyvips_installed:
             img_rgb = pyvips.Image.new_from_file(path, access="sequential")
+            if resize_width is not None and resize_height is not None:
+                img_rgb = img_rgb.resize(resize_width / img_rgb.width, vscale=resize_height / img_rgb.height)
+            img_rgb = np.ndarray(buffer=img_rgb.write_to_memory(), dtype=np.uint8, shape=[img_rgb.height, img_rgb.width, img_rgb.bands])
         else:
             img_rgb = cv2.imread(path)[..., ::-1]
+            if resize_width is not None and resize_height is not None:
+                img_rgb = cv2.resize(img_rgb, (resize_width, resize_height))
         frames = torch.from_numpy(np.ascontiguousarray(img_rgb))[None]
         assert frames.ndim == 4, f"{path} ndim={frames.ndim}"
         return frames
@@ -980,7 +985,8 @@ class Data:
                         ref_frame_tensors_all.append(frames_chunk)
                     ref_frames = torch.cat(ref_frame_tensors_all, dim=0)
                 else:
-                    ref_frames = self.read_image(ref_path)
+                    ref_frames = self.read_image(ref_path, resize_width, resize_height)
+                    ref_frames = ref_frames.repeat(len(frame_indexes), 1, 1, 1)
 
             if content_ref_path:
                 if ".mp4" in content_ref_path:
@@ -991,7 +997,8 @@ class Data:
                         content_ref_frame_tensors_all.append(frames_chunk)
                     content_ref_frames = torch.cat(content_ref_frame_tensors_all, dim=0)
                 else:
-                    content_ref_frames = self.read_image(content_ref_path)
+                    content_ref_frames = self.read_image(content_ref_path, resize_width, resize_height)
+                    content_ref_frames = content_ref_frames.repeat(len(frame_indexes), 1, 1, 1)
 
         else:
             frames = reader.get_batch(frame_indexes)
@@ -999,12 +1006,14 @@ class Data:
                 if ".mp4" in ref_path:
                     ref_frames = ref_reader.get_batch(frame_indexes)
                 else:
-                    ref_frames = self.read_image(ref_path)
+                    ref_frames = self.read_image(ref_path, resize_width, resize_height)
+                    ref_frames = ref_frames.repeat(len(frame_indexes), 1, 1, 1)
             if content_ref_path:
                 if ".mp4" in content_ref_path:
                     content_ref_frames = content_ref_reader.get_batch(frame_indexes)
                 else:
-                    content_ref_frames = self.read_image(content_ref_path)
+                    content_ref_frames = self.read_image(content_ref_path, resize_width, resize_height)
+                    content_ref_frames = content_ref_frames.repeat(len(frame_indexes), 1, 1, 1)
         
         if ref_path and not content_ref_path:
             return frames, ref_frames, start_frame, frame_stride, fps, duration, (height, width)
