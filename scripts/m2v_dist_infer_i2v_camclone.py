@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 import numpy as np
 import torch
+import cv2
 from einops import rearrange
 import imageio.v2 as imageio
 from PIL import Image
@@ -142,19 +143,57 @@ class M2V:
         for batch in track(self.data.dataloader, total=len(self.data.dataloader)):
             video = self.inference(batch)
             for i in range(self.config.data.batch_size):
-                target_path, metadata = self.get_save_name(batch, i, cnt)
-                
-                import decord
-                f, h, w, c = video[i].shape
-                ctx = decord.cpu(0)
-                rgb_reader = decord.VideoReader(batch['ref_data_paths'][0], ctx=ctx, height=h, width=w)
-                length = len(rgb_reader)
-                frame_indexes = list(range(batch['start_frames'][0], batch['num_frames'][0] * batch['frame_strides'][0], batch['frame_strides'][0]))
-                frame_indexes = [min(frame_index, length - 1) for frame_index in frame_indexes]
-                rgb_video = rgb_reader.get_batch(frame_indexes).numpy()
-                concat_video = np.concatenate((rgb_video, video[i]), axis=2)
-                self.write_data(concat_video, target_path)
-                print(f"Saved to {target_path}")
+                gen_path, concat_path, metadata = self.get_save_name(batch, i, cnt)
+
+                # 1) 保存"纯生成视频"
+                self.write_data(video[i], gen_path)
+                print(f"Saved generated video to {gen_path}")
+
+                # 2) 读取 ref 原始分辨率视频/图片，并把生成视频按照 ref 高度等比缩放后拼接保存
+                ref_path = batch['ref_data_paths'][0]
+                if ".mp4" in ref_path:
+                    import decord
+                    ctx = decord.cpu(0)
+                    ref_reader = decord.VideoReader(ref_path, ctx=ctx)  # 不指定 height/width，保持原始分辨率
+                    length = len(ref_reader)
+                    frame_indexes = list(range(
+                        batch['start_frames'][0],
+                        batch['num_frames'][0] * batch['frame_strides'][0],
+                        batch['frame_strides'][0],
+                    ))
+                    frame_indexes = [min(frame_index, length - 1) for frame_index in frame_indexes]
+                    rgb_video = ref_reader.get_batch(frame_indexes).numpy()  # (F, H_ref, W_ref, C)
+                else:
+                    # ref 是图片，按原始分辨率读取后复制成与生成视频相同的帧数
+                    img_bgr = cv2.imread(ref_path)
+                    img_rgb = img_bgr[..., ::-1]
+                    rgb_video = np.broadcast_to(img_rgb[None], (video[i].shape[0], img_rgb.shape[0], img_rgb.shape[1], img_rgb.shape[2])).copy()
+
+                # 生成视频（保持原本宽高比），高度对齐到 ref 高度，宽度等比缩放
+                gen_f, gen_h, gen_w, gen_c = video[i].shape
+                ref_f, ref_h, ref_w, ref_c = rgb_video.shape
+                num_frames_concat = min(gen_f, ref_f)
+
+                # libx264 + yuv420p 要求宽高均为偶数；先保证 ref 视频高度为偶数
+                if ref_h % 2 == 1:
+                    rgb_video = rgb_video[:, : ref_h - 1, :, :]
+                    ref_h = ref_h - 1
+                if ref_w % 2 == 1:
+                    rgb_video = rgb_video[:, :, : ref_w - 1, :]
+                    ref_w = ref_w - 1
+
+                target_h = ref_h
+                target_w = max(1, int(round(gen_w * (target_h / float(gen_h)))))
+                if target_w % 2 == 1:
+                    target_w += 1
+                resized_gen = np.zeros((num_frames_concat, target_h, target_w, gen_c), dtype=video[i].dtype)
+                for fi in range(num_frames_concat):
+                    resized_gen[fi] = cv2.resize(video[i][fi], (target_w, target_h), interpolation=cv2.INTER_LINEAR)
+
+                concat_video = np.concatenate((rgb_video[:num_frames_concat], resized_gen), axis=2)
+                self.write_data(concat_video, concat_path)
+                print(f"Saved concat video to {concat_path}")
+
                 cnt += 1
                 result_csv.append(metadata)
 
@@ -207,9 +246,14 @@ class M2V:
         else:
             video_name = f"CamCloneMaster_{(8 * cnt + self.rank):04d}.{file_type}"
             # video_name = f"R{self.rank}L{cnt}_{data_path}{name_endfix}.{file_type}"
-        output_path = os.path.join(self.config.test_dir, video_name)
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        return output_path, (prompt, data_path, output_path)
+        # 分别保存 "纯生成视频" 与 "ref+生成 拼接视频" 到两个不同的子文件夹
+        gen_dir = os.path.join(self.config.test_dir, "generated")
+        concat_dir = os.path.join(self.config.test_dir, "concat")
+        os.makedirs(gen_dir, exist_ok=True)
+        os.makedirs(concat_dir, exist_ok=True)
+        gen_path = os.path.join(gen_dir, video_name)
+        concat_path = os.path.join(concat_dir, video_name)
+        return gen_path, concat_path, (prompt, data_path, concat_path)
 
 
 def main(config: TestConfig):
