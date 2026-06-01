@@ -10,7 +10,7 @@ for SUBDIR_NAME in "${SUBDIR_LIST[@]}"; do
         # 替换命令中的地址
         TRANSFORMER_CKPT_PATH="$SUBDIR/ema/transformer.ckpt"
         echo "ckpt is $TRANSFORMER_CKPT_PATH"
-        TEST_DIR="test_dir/new_camclone_100_v2"
+        TEST_DIR="test_dir/new_camclone_100_v3"
         echo "Test directory is $TEST_DIR"
 
         bash scripts/dist_run.sh \
