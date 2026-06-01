@@ -1,3 +1,8 @@
+'''
+早期AB两个视频的测试
+
+'''
+
 import time
 import os
 from google import genai
