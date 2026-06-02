@@ -169,28 +169,50 @@ class M2V:
                     img_rgb = img_bgr[..., ::-1]
                     rgb_video = np.broadcast_to(img_rgb[None], (video[i].shape[0], img_rgb.shape[0], img_rgb.shape[1], img_rgb.shape[2])).copy()
 
-                # 生成视频（保持原本宽高比），高度对齐到 ref 高度，宽度等比缩放
+                # 思路：以"生成视频"的长宽比 (gen_w/gen_h，等同于首帧图长宽比) 为基准，
+                # 对 ref 视频做 center-crop 把它的长宽比裁到与生成视频一致，
+                # 再 resize 到与生成视频完全相同的 (gen_h, gen_w)，
+                # 这样 concat 后整体就是规整的 (gen_h, 2*gen_w) 矩形，左右都不变形。
                 gen_f, gen_h, gen_w, gen_c = video[i].shape
                 ref_f, ref_h, ref_w, ref_c = rgb_video.shape
                 num_frames_concat = min(gen_f, ref_f)
 
-                # libx264 + yuv420p 要求宽高均为偶数；先保证 ref 视频高度为偶数
-                if ref_h % 2 == 1:
-                    rgb_video = rgb_video[:, : ref_h - 1, :, :]
-                    ref_h = ref_h - 1
-                if ref_w % 2 == 1:
-                    rgb_video = rgb_video[:, :, : ref_w - 1, :]
-                    ref_w = ref_w - 1
+                target_aspect = gen_w / float(gen_h)  # 目标长宽比
+                cur_aspect = ref_w / float(ref_h)
+                if cur_aspect > target_aspect:
+                    # ref 太宽，沿宽度做 center crop
+                    new_w = int(round(ref_h * target_aspect))
+                    new_w = max(1, min(new_w, ref_w))
+                    x0 = (ref_w - new_w) // 2
+                    rgb_video = rgb_video[:, :, x0:x0 + new_w, :]
+                elif cur_aspect < target_aspect:
+                    # ref 太高，沿高度做 center crop
+                    new_h = int(round(ref_w / target_aspect))
+                    new_h = max(1, min(new_h, ref_h))
+                    y0 = (ref_h - new_h) // 2
+                    rgb_video = rgb_video[:, y0:y0 + new_h, :, :]
 
-                target_h = ref_h
-                target_w = max(1, int(round(gen_w * (target_h / float(gen_h)))))
+                # crop 后 resize 到与生成视频完全相同的 (gen_h, gen_w)
+                target_h, target_w = gen_h, gen_w
+                # libx264 + yuv420p 要求宽高均为偶数
+                if target_h % 2 == 1:
+                    target_h -= 1
                 if target_w % 2 == 1:
-                    target_w += 1
-                resized_gen = np.zeros((num_frames_concat, target_h, target_w, gen_c), dtype=video[i].dtype)
-                for fi in range(num_frames_concat):
-                    resized_gen[fi] = cv2.resize(video[i][fi], (target_w, target_h), interpolation=cv2.INTER_LINEAR)
+                    target_w -= 1
 
-                concat_video = np.concatenate((rgb_video[:num_frames_concat], resized_gen), axis=2)
+                resized_ref = np.zeros((num_frames_concat, target_h, target_w, ref_c), dtype=rgb_video.dtype)
+                for fi in range(num_frames_concat):
+                    resized_ref[fi] = cv2.resize(rgb_video[fi], (target_w, target_h), interpolation=cv2.INTER_LINEAR)
+
+                # 生成视频也对齐到 (target_h, target_w)（如果上面把奇数尺寸 -1 了，需要相应缩放/裁切）
+                if (target_h, target_w) != (gen_h, gen_w):
+                    resized_gen = np.zeros((num_frames_concat, target_h, target_w, gen_c), dtype=video[i].dtype)
+                    for fi in range(num_frames_concat):
+                        resized_gen[fi] = cv2.resize(video[i][fi], (target_w, target_h), interpolation=cv2.INTER_LINEAR)
+                else:
+                    resized_gen = video[i][:num_frames_concat]
+
+                concat_video = np.concatenate((resized_ref, resized_gen), axis=2)
                 self.write_data(concat_video, concat_path)
                 print(f"Saved concat video to {concat_path}")
 

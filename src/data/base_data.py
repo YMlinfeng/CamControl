@@ -871,8 +871,25 @@ class Data:
         height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
         width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
 
+        # NOTE: 如果 content_ref 是图片（首帧图），优先以它的长宽比作为 resize 基准，
+        #       这样可以保证生成视频与首帧图的长宽比保持一致，不会出现压扁/拉伸。
+        #       同时 ref 视频会跟随 resize（其长宽比可能被改变，但 CamCloneMaster 主要关心
+        #       的是相机运动信号而非几何，因此这种轻微变形是可接受的）。
+        ref_width_for_aspect, ref_height_for_aspect = None, None
+        if content_ref_path and ".mp4" not in content_ref_path:
+            try:
+                _img = cv2.imread(content_ref_path)
+                if _img is not None:
+                    ref_height_for_aspect, ref_width_for_aspect = _img.shape[:2]
+            except Exception as _e:
+                ref_height_for_aspect, ref_width_for_aspect = None, None
+
         if self.config.resize_video:  # Training, we can use Navit
-            resize_width, resize_height = self.get_target_size(width, height)  # 得到对长宽比进行约束之后的视频， 使用NAViT即为可变长宽比
+            if ref_width_for_aspect is not None and ref_height_for_aspect is not None:
+                # 使用 content_ref 图片的长宽比来确定 resize 尺寸
+                resize_width, resize_height = self.get_target_size(ref_width_for_aspect, ref_height_for_aspect)
+            else:
+                resize_width, resize_height = self.get_target_size(width, height)  # 得到对长宽比进行约束之后的视频， 使用NAViT即为可变长宽比
         else:
             resize_width, resize_height = int(width), int(height)
         
