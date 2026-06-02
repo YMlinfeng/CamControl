@@ -8,6 +8,7 @@ npz
 synthetic_npz*
 VBench
 *.txt
+output
 
 
 # Byte-compiled / optimized / DLL files

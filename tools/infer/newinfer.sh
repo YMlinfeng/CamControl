@@ -10,19 +10,19 @@ for SUBDIR_NAME in "${SUBDIR_LIST[@]}"; do
         # 替换命令中的地址
         TRANSFORMER_CKPT_PATH="$SUBDIR/ema/transformer.ckpt"
         echo "ckpt is $TRANSFORMER_CKPT_PATH"
-        TEST_DIR="test_dir/new_camclone_100_v3"
+        TEST_DIR="test_dir/new_camclone_100_v4"
         echo "Test directory is $TEST_DIR"
 
         bash scripts/dist_run.sh \
             python scripts/m2v_dist_infer_i2v_camclone.py \
             exps/0016--1b_camclonemaster_node_12/config.yml \
-            --data.path /m2v_intern/mengzijie/m2v_camclone_v2/fixed_complex.csv \
+            --data.path /m2v_intern/mengzijie/m2v_camclone_v2/eval_dataset_200/eval_dataset_200.csv \
             --data.t5_prompt_embed_column None \
             --data.caption_column prompt \
             --data.ref_path_column ref_videos \
             --data.video_path_column ref_videos \
             --data.content_ref_path_column ref_images \
-            --data.num_samples 100 \
+            --data.num_samples 216 \
             --data.batch_size 1 \
             --data.cache_dir None \
             --data.crop_type None \

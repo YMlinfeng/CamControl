@@ -1,3 +1,8 @@
+'''
+推理完后处理脚本，给csv加上两列结果
+
+'''
+
 import os
 import pandas as pd
 
