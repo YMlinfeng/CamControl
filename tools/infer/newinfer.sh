@@ -18,11 +18,12 @@ for SUBDIR_NAME in "${SUBDIR_LIST[@]}"; do
             exps/0016--1b_camclonemaster_node_12/config.yml \
             --data.path /m2v_intern/mengzijie/m2v_camclone_v2/eval_dataset_200/eval_dataset_200.csv \
             --data.t5_prompt_embed_column None \
+            --data.index_column index \
             --data.caption_column prompt \
             --data.ref_path_column ref_videos \
             --data.video_path_column ref_videos \
             --data.content_ref_path_column ref_images \
-            --data.num_samples 216 \
+            --data.num_samples 208 \
             --data.batch_size 1 \
             --data.cache_dir None \
             --data.crop_type None \
