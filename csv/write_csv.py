@@ -11,6 +11,9 @@ subdirs = [d for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_di
 video_exts = ('.mp4', '.avi', '.mov', '.mkv', '.webm')
 
 for subdir in subdirs:
+    if "sd" not in subdir:
+        print(f"⚠️ 跳过非目标子目录: {subdir}")
+        continue
     subdir_path = os.path.join(base_dir, subdir)
     
     # 1. 获取该子目录下所有的视频文件，并按文件夹中的字母/数字顺序排序
