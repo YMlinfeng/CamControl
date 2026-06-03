@@ -3,9 +3,9 @@ import os
 
 def process_csv():
     # 定义输入和输出路径
-    input_path = "/m2v_intern/mengzijie/m2v_camclone_v2/output/o1.csv"
+    input_path = "/m2v_intern/mengzijie/m2v_camclone_v2/output/o5.csv"
     output_dir = "/m2v_intern/mengzijie/m2v_camclone_v2/output"
-    output_path = os.path.join(output_dir, "o1.csv")
+    output_path = os.path.join(output_dir, "o5+.csv")
 
     # 如果输出目录不存在，则创建它
     if not os.path.exists(output_dir):
@@ -19,7 +19,7 @@ def process_csv():
     # 确保 index 列是字符串类型，防止拼接出错
     df['index'] = df['index'].astype(str)
 
-    # # (1) ltx_gen
+    # (1) ltx_gen
     # df['ltx_gen'] = "/m2v_intern/mengzijie/m2v_camclone_v2/eval_dataset_200/ltx/" + df['index'] + ".mp4"
     
     # # (2) ltx_concat
@@ -37,8 +37,12 @@ def process_csv():
     # # (6) camclone_concat
     # df['camclone_concat'] = "/m2v_intern/mengzijie/m2v_camclone_v2/test_dir/new_camclone_100_v4/concat/" + df['index'] + ".mp4"
 
-    df['sd2_gen'] = "/m2v_intern/mengzijie/m2v_camclone_v2/eval_dataset_200/sd2.0/" + df['index'] + ".mp4"
-    df['sd2_concat'] = "/m2v_intern/mengzijie/m2v_camclone_v2/eval_dataset_200/sd2.0_concat/" + df['index'] + ".mp4"
+    # df['sd2.0_gen'] = "/m2v_intern/mengzijie/m2v_camclone_v2/eval_dataset_200/sd2.0/" + df['index'] + ".mp4"
+    # df['sd2.0_concat'] = "/m2v_intern/mengzijie/m2v_camclone_v2/eval_dataset_200/sd2.0_concat/" + df['index'] + ".mp4"
+    df['ltx_npz'] = "/m2v_intern/mengzijie/m2v_camclone_v2/npz/ltx/" + df['index'] + ".npz"
+    df['ours_npz'] = "/m2v_intern/mengzijie/m2v_camclone_v2/npz/ours/" + df['index'] + ".npz"
+    df['camclone_npz'] = "/m2v_intern/mengzijie/m2v_camclone_v2/npz/camclone/" + df['index'] + ".npz"
+    df['sd2.0_npz'] = "/m2v_intern/mengzijie/m2v_camclone_v2/npz/sd2.0/" + df['index'] + ".npz"
 
     # 保存新的 CSV 文件
     df.to_csv(output_path, index=False)

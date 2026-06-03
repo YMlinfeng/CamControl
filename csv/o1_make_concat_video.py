@@ -1,170 +1,108 @@
+"""
+文件用途：
+    该脚本用于校验 CSV 文件中指定的视频路径是否存在。
+    通过检查 CSV 中的路径列，统计并列出所有文件缺失的路径。
+
+使用方法：
+    1. 修改 `csv_path` 为你需要检查的 CSV 文件路径。
+    2. 在 `columns_to_check` 中填入需要校验的列名。
+    3. 设置 `REMOVE_MISSING` 参数：
+        - True: 仅清除不存在的路径字符串（单元格置空），保留整行其他数据，并保存。
+        - False: 仅输出测试报告，不修改文件。
+    4. 运行：python <文件名>.py
+"""
+
 import pandas as pd
-import json
 import os
-import subprocess
-import cv2
 from tqdm import tqdm
 
-def get_image_info(image_path):
-    """获取图像的宽、高和长宽比"""
-    img = cv2.imread(image_path)
-    if img is None:
-        return None, None, None
-    h, w = img.shape[:2]
-    return w, h, w / h
-
-def run_ffmpeg_task(ref_v, gen_v, output_p, target_w, target_h):
-    """
-    FFmpeg 核心逻辑：强制高度为偶数，截取前77帧，15fps，左右拼接。
-    """
-    # --- 核心修复：确保高度是偶数 ---
-    if target_h % 2 != 0:
-        target_h -= 1
-    
-    target_ratio = target_w / target_h
-    
-    ref_filter = (
-        f"fps=15,select='lt(n,77)',setpts=N/FRAME_RATE/TB,"
-        f"crop='if(gt(iw/ih,{target_ratio}),ih*{target_ratio},iw)':'if(gt(iw/ih,{target_ratio}),ih,iw/{target_ratio})',"
-        f"scale=-2:{target_h}"
-    )
-    
-    gen_filter = (
-        f"fps=15,select='lt(n,77)',setpts=N/FRAME_RATE/TB,"
-        f"scale=-2:{target_h}"
-    )
-    
-    filter_complex = (
-        f"[0:v]{ref_filter}[ref];"
-        f"[1:v]{gen_filter}[gen];"
-        f"[ref][gen]hstack=inputs=2[out]"
-    )
-    
-    cmd = [
-        'ffmpeg', '-y',
-        '-i', ref_v,
-        '-i', gen_v,
-        '-filter_complex', filter_complex,
-        '-map', '[out]',
-        '-c:v', 'libx264',
-        '-crf', '20',
-        '-preset', 'veryfast',
-        '-pix_fmt', 'yuv420p',
-        output_p
-    ]
-    
-    try:
-        subprocess.run(cmd, capture_output=True, text=True, check=True)
-        return True
-    except subprocess.CalledProcessError as e:
-        return False
-
-def process_upgrade():
-    # 路径配置
+def verify_video_paths():
+    # --- 配置区域 ---
+    # 定义 CSV 路径
     csv_path = "/m2v_intern/mengzijie/m2v_camclone_v2/output/o1.csv"
-    base_out_dir = "/m2v_intern/mengzijie/m2v_camclone_v2/eval_dataset_200"
     
+    # 控制参数：如果开启，将清除不存在的路径（单元格内容置空），但保留该行
+    REMOVE_MISSING = True 
+    
+    # 定义需要检查的列名
+    columns_to_check = [
+        # 'ltx_gen', 
+        # 'ltx_concat', 
+        # 'ours_gen', 
+        # 'ours_concat', 
+        # 'camclone_gen', 
+        # 'camclone_concat',
+        'sd2.0_gen',
+        'sd2.0_concat'
+    ]
+    # ----------------
+
     if not os.path.exists(csv_path):
-        print(f"找不到 CSV 文件: {csv_path}")
+        print(f"❌ 错误: 找不到 CSV 文件 {csv_path}")
         return
 
-    # 读取数据
+    # 读取 CSV
     df = pd.read_csv(csv_path)
+    total_rows = len(df)
     
-    # 定义要处理的类型
-    types = ['sd2.0'] # 这里改了，stats 也会跟着变
-    
-    # --- 核心修改：动态初始化统计字典，防止 KeyError ---
-    stats = {t: {'already_exists': 0, 'new_success': 0, 'fail': 0, 'failed_indices': []} for t in types}
-    
-    for t in types:
-        out_dir = os.path.join(base_out_dir, f"{t}_concat")
-        os.makedirs(out_dir, exist_ok=True)
-        
-        # 检查 CSV 中是否存在对应的列，防止列名写错报错
-        target_gen_col = f"{t}_gen"
-        if target_gen_col not in df.columns:
-            print(f"⚠️ 警告: CSV 中找不到列 '{target_gen_col}'，请检查表头。")
-            continue
-        
-        print(f"\n🚀 开始处理 {t.upper()} 类型的任务 (跳过已存在文件)...")
-        
-        for idx, row in tqdm(df.iterrows(), total=len(df), desc=f"{t} 进度"):
-            video_index = row.get('index', f'row_{idx}')
-            output_video_path = os.path.join(out_dir, f"{video_index}.mp4")
+    print(f"开始测试... 总计行数: {total_rows}")
+    print(f"待检查列: {', '.join(columns_to_check)}")
+    print(f"清除模式: {'开启 (将清除无效单元格)' if REMOVE_MISSING else '关闭 (仅报告)'}")
+    print("-" * 50)
 
-            # --- 断点续传逻辑：如果文件已存在，直接跳过 ---
-            if os.path.exists(output_video_path):
-                stats[t]['already_exists'] += 1
-                continue
+    # 存储统计结果
+    missing_files = {col: [] for col in columns_to_check}
+    total_missing_count = 0
+    modified_flag = False
 
-            try:
-                # 1. 解析路径
-                ref_v_data = json.loads(row['ref_videos']) if isinstance(row['ref_videos'], str) else row['ref_videos']
-                ref_i_data = json.loads(row['ref_images']) if isinstance(row['ref_images'], str) else row['ref_images']
+    # 遍历每一行进行检查
+    # 使用 tqdm 显示进度条
+    for index, row in tqdm(df.iterrows(), total=total_rows, desc="校验进度"):
+        for col in columns_to_check:
+            path = row[col]
+            
+            # 检查路径是否为空或文件是否存在
+            if pd.isna(path) or not os.path.exists(str(path)):
+                missing_files[col].append({
+                    'row_index': index,
+                    'video_index': row.get('index', 'N/A'),
+                    'path': path
+                })
+                total_missing_count += 1
                 
-                ref_video_path = ref_v_data[0]['value']
-                ref_image_path = ref_i_data[0]['value']
-                gen_video_path = row[target_gen_col]
-                
-                # 2. 检查输入文件 (确保磁盘已挂载)
-                if not os.path.exists(ref_video_path) or pd.isna(gen_video_path) or not os.path.exists(str(gen_video_path)):
-                    stats[t]['fail'] += 1
-                    missing = ref_video_path if not os.path.exists(ref_video_path) else gen_video_path
-                    stats[t]['failed_indices'].append(f"{video_index} (文件缺失: {missing})")
-                    continue
+                # 如果开启清除模式，将该单元格内容清空
+                if REMOVE_MISSING:
+                    df.at[index, col] = ""
+                    modified_flag = True
 
-                # 3. 获取图片尺寸
-                img_w, img_h, _ = get_image_info(ref_image_path)
-                if img_w is None:
-                    stats[t]['fail'] += 1
-                    stats[t]['failed_indices'].append(f"{video_index} (图片读取失败)")
-                    continue
-                
-                # 4. 执行拼接
-                success = run_ffmpeg_task(ref_video_path, gen_video_path, output_video_path, img_w, img_h)
-                
-                if success:
-                    stats[t]['new_success'] += 1
-                else:
-                    stats[t]['fail'] += 1
-                    stats[t]['failed_indices'].append(f"{video_index} (FFmpeg报错)")
-                
-            except Exception as e:
-                stats[t]['fail'] += 1
-                stats[t]['failed_indices'].append(f"{video_index} (程序异常: {str(e)})")
-                continue
-
-    # --- 最终统计报告 ---
-    print("\n" + "="*60)
-    print("📊 [任务处理最终统计报告]")
-    print("="*60)
+    # --- 输出测试报告 ---
+    print("\n" + "="*20 + " 测试报告 " + "="*20)
     
-    total_expected = len(df)
-    
-    for t in types:
-        if t not in stats: continue
-        s = stats[t]
-        total_finished = s['already_exists'] + s['new_success']
+    if total_missing_count == 0:
+        print("✅ 完美！所有列中的所有视频文件均已找到。")
+    else:
+        print(f"❌ 警告: 共发现 {total_missing_count} 个位置路径缺失！\n")
         
-        print(f"\n🔹 类型: {t.upper()}")
-        print(f"   ⏭️  原本已存在 (跳过): {s['already_exists']}")
-        print(f"   ✨  本次新成功: {s['new_success']}")
-        print(f"   ❌  处理失败: {s['fail']}")
-        print(f"   📈  当前总计成功 (已存在+新成功): {total_finished} / {total_expected}")
-        
-        if total_finished == total_expected:
-            print(f"   ✅ 恭喜！{t.upper()} 所有视频 (共{total_expected}个) 已全部就绪。")
-        else:
-            print(f"   ⚠️  注意！{t.upper()} 还有 {total_expected - total_finished} 个视频未完成。")
+        for col, missing_list in missing_files.items():
+            missing_num = len(missing_list)
+            status = "OK" if missing_num == 0 else f"缺失 {missing_num}"
+            print(f"列 [{col}]: {status}")
+            
+            # 如果该列有缺失，列出前 5 个缺失的具体路径供参考
+            if missing_num > 0:
+                for item in missing_list[:5]:
+                    print(f"   - 行 {item['row_index']} (Index: {item['video_index']}): {item['path']}")
+                if missing_num > 5:
+                    print(f"   - ... 还有 {missing_num - 5} 个缺失项未列出")
+                print("-" * 30)
 
-        if s['fail'] > 0:
-            print(f"   具体失败原因及 index:")
-            for i in range(0, len(s['failed_indices']), 2):
-                print("      " + " | ".join(s['failed_indices'][i:i+2]))
-    
-    print("\n" + "="*60)
-    print("✅ 处理程序运行结束")
+        # --- 执行保存操作 ---
+        if REMOVE_MISSING and modified_flag:
+            print(f"\n正在更新 CSV 文件...")
+            df.to_csv(csv_path, index=False)
+            print(f"♻️ 已将 {total_missing_count} 个无效路径从单元格中清除并保存。")
+
+    print("=" * 50)
 
 if __name__ == "__main__":
-    process_upgrade()
+    verify_video_paths()
