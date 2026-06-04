@@ -2,12 +2,15 @@
 文件用途：
     批量计算真实 (dpa-v3) 与生成 ({x}_npz) 相机位姿的误差指标。
     脚本会遍历 sd2.0, camclone, ltx, ours 四个模型，提取位姿误差，
-    并将结果中的 camera_motion_consistency (综合运动一致性) 写入新列 {x}_npz_value。
+    并将以下三个结果写入新列：
+    1. camera_motion_consistency (综合运动一致性) -> 写入 {x}_npz_value
+    2. rot_err_deg_mean (平均旋转误差)            -> 写入 {x}_rot_err_deg_mean
+    3. trans_err_mean (平均平移误差)              -> 写入 {x}_trans_err_mean
 
 使用方法：
     1. 输入 CSV：/m2v_intern/mengzijie/m2v_camclone_v2/output/o5.csv
     2. 输出 CSV：/m2v_intern/mengzijie/m2v_camclone_v2/output/o6.csv
-    3. 逻辑：对比 dpa-v3 列与 {x}_npz 列，计算出的误差存入 {x}_npz_value。
+    3. 逻辑：对比 dpa-v3 列与 {x}_npz 列，计算出的误差存入对应新列。
     4. 脚本已处理路径不存在的情况，若路径缺失将跳过该行，不报错。
 """
 
@@ -213,6 +216,8 @@ def main():
     for model_x in MODELS:
         gen_col = f"{model_x}_npz"
         target_val_col = f"{model_x}_npz_value"
+        target_rot_col = f"{model_x}_rot_err_deg_mean"
+        target_trans_col = f"{model_x}_trans_err_mean"
         
         if gen_col not in final_df.columns:
             print(f"⚠️ 列 {gen_col} 不在 CSV 中，跳过。")
@@ -230,13 +235,32 @@ def main():
             workers=WORKERS
         )
 
-        # 将计算出的 camera_motion_consistency 映射回主表
-        if not res_df.empty and "camera_motion_consistency" in res_df.columns:
-            # 建立 原始索引 -> 误差值 的映射
-            mapping = res_df.set_index("original_index")["camera_motion_consistency"].to_dict()
-            final_df[target_val_col] = final_df.index.map(mapping)
+        # 将计算出的指标映射回主表
+        if not res_df.empty:
+            # 1. 综合运动一致性
+            if "camera_motion_consistency" in res_df.columns:
+                mapping_motion = res_df.set_index("original_index")["camera_motion_consistency"].to_dict()
+                final_df[target_val_col] = final_df.index.map(mapping_motion)
+            else:
+                final_df[target_val_col] = np.nan
+                
+            # 2. 平均旋转误差
+            if "rot_err_deg_mean" in res_df.columns:
+                mapping_rot = res_df.set_index("original_index")["rot_err_deg_mean"].to_dict()
+                final_df[target_rot_col] = final_df.index.map(mapping_rot)
+            else:
+                final_df[target_rot_col] = np.nan
+                
+            # 3. 平均平移误差
+            if "trans_err_mean" in res_df.columns:
+                mapping_trans = res_df.set_index("original_index")["trans_err_mean"].to_dict()
+                final_df[target_trans_col] = final_df.index.map(mapping_trans)
+            else:
+                final_df[target_trans_col] = np.nan
         else:
             final_df[target_val_col] = np.nan
+            final_df[target_rot_col] = np.nan
+            final_df[target_trans_col] = np.nan
 
     # 保存最终结果
     final_df.to_csv(OUTPUT_CSV, index=False)
@@ -244,13 +268,19 @@ def main():
     print(f"💾 结果已保存至: {OUTPUT_CSV}")
 
     # 打印简要统计
-    print("\n" + "="*30 + " 任务统计摘要 " + "="*30)
+    print("\n" + "="*20 + " 任务统计摘要 (各指标均值) " + "="*20)
     for model_x in MODELS:
         val_col = f"{model_x}_npz_value"
+        rot_col = f"{model_x}_rot_err_deg_mean"
+        trans_col = f"{model_x}_trans_err_mean"
+        
         if val_col in final_df.columns:
             mean_err = final_df[val_col].mean()
-            print(f"模型 {model_x:<10} | 平均运动一致性误差: {mean_err:.6f}")
-    print("="*65)
+            mean_rot = final_df[rot_col].mean() if rot_col in final_df.columns else np.nan
+            mean_trans = final_df[trans_col].mean() if trans_col in final_df.columns else np.nan
+            
+            print(f"模型 {model_x:<10} | 综合误差: {mean_err:<8.4f} | 旋转误差(度): {mean_rot:<8.4f} | 平移误差: {mean_trans:<8.4f}")
+    print("="*75)
 
 if __name__ == "__main__":
     main()

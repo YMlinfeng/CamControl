@@ -33,7 +33,7 @@ for SUBDIR_NAME in "${SUBDIR_LIST[@]}"; do
             --width 672 \
             --height 384 \
             --fps 15 \
-            --num_frames 77 \
+            --num_frames 145 \
             --guidance_scale $cfg \
             --seed 42 \
             --num_inference_steps 50 \
