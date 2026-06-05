@@ -135,7 +135,6 @@ def process_single_pair(task):
 
 
 # ════════════════ 核心封装函数 (完整保留) ════════════════
-
 def evaluate_pose_metrics_batch(
     out_csv: str,
     mode: str = "csv",
@@ -199,10 +198,11 @@ def evaluate_pose_metrics_batch(
 
 def main():
     # --- 你的特定任务配置 ---
-    INPUT_CSV = "/m2v_intern/mengzijie/m2v_camclone_v2/output/o5+.csv"
-    OUTPUT_CSV = "/m2v_intern/mengzijie/m2v_camclone_v2/output/o6.csv"
+    INPUT_CSV = "/m2v_intern/mengzijie/m2v_camclone_v2/delete/o1.csv"
+    OUTPUT_CSV = "/m2v_intern/mengzijie/m2v_camclone_v2/delete/o2.csv"
     REAL_COL = "dpa-v3"
-    MODELS = ['sd2.0', 'camclone', 'ltx', 'ours']
+    # MODELS = ['sd2.0', 'camclone', 'ltx', 'ours']
+    MODELS = ['camclone']
     WORKERS = 16
 
     if not os.path.exists(INPUT_CSV):
