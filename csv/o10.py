@@ -120,27 +120,6 @@ def process_and_concat():
             # frames_ref = vr_ref.get_batch(range(len(index_list))).asnumpy()
             frames_ours = vr_ours.get_batch(index_list_new).asnumpy()
             
-            # 获取目标尺寸（以 ours 为准）
-            # h_ours, w_ours = frames_ours.shape[1:3]
-            
-            # final_frames = []
-            
-            # # 2. 逐帧处理（裁剪、缩放、打标签、拼接）
-            # for i in range(min(n_ours, n_ref)):
-            #     f_ref = frames_ref[i]
-            #     f_ours = frames_ours[i]
-                
-            #     # 处理 Ref：中心裁剪并缩放到 ours 大小
-            #     f_ref_processed = center_crop_and_resize(f_ref, w_ours, h_ours)
-                
-            #     # 绘制元数据标签
-            #     f_ref_processed = draw_metadata(f_ref_processed, f"Ref: {n_ref}f / {fps_ref:.1f}fps")
-            #     f_ours = draw_metadata(f_ours, f"Ours: {n_ours}f / {fps_ours:.1f}fps")
-                
-            #     # 横向拼接
-            #     combined = np.hstack((f_ref_processed, f_ours))
-            #     final_frames.append(combined)
-            
             # 3. 保存拼接视频
             # video_array = np.array(frames_ours)
             output_name = os.path.join(SAVE_DIR, f"{vid_index}.mp4")

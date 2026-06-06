@@ -9,6 +9,9 @@ synthetic_npz*
 VBench
 *.txt
 output
+*.mp4
+*.npz
+*.done
 
 
 # Byte-compiled / optimized / DLL files
