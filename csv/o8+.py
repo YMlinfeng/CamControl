@@ -24,12 +24,13 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 
 # --- 配置区域 ---
-CONCAT_DIR = "/m2v_intern/mengzijie/m2v_camclone_v2/output_25/concat"
-CAM_DIR    = "/m2v_intern/mengzijie/m2v_camclone_v2/output_25/camclone"
-LTX_DIR    = "/m2v_intern/mengzijie/m2v_camclone_v2/output_25/ltx"
-OURS_DIR   = "/m2v_intern/mengzijie/m2v_camclone_v2/output_25/ours"
-SD2_DIR    = "/m2v_intern/mengzijie/m2v_camclone_v2/output_25/sd2.0"
-REF_DIR    = "/m2v_intern/mengzijie/m2v_camclone_v2/output_25/ref"
+BASE = "/m2v_intern/mengzijie/VBench/testdataset/"
+CONCAT_DIR = BASE + "concat"
+CAM_DIR    = BASE + "camclone"
+LTX_DIR    = BASE + "ltx"
+OURS_DIR   = BASE + "ours"
+SD2_DIR    = BASE + "sd2.0"
+REF_DIR    = BASE + "ref"
 
 NUM_WORKERS = 16      # 并行进程数，按机器调整
 # ----------------

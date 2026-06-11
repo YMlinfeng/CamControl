@@ -11,6 +11,9 @@ output
 *.mp4
 *.npz
 *.done
+viz_output*
+*npz
+hitchcock
 
 
 # Byte-compiled / optimized / DLL files
