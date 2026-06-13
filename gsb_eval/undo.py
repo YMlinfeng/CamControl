@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-# 指定你的数据库绝对路径（防止相对路径找错）
+# 指定你的数据库绝对路径（防止相对路径找错）todo
 DB_PATH = '/m2v_intern/mengzijie/m2v_camclone_v2/gsb_eval/eval_results.db'
 
 def undo_last_eval():
