@@ -2,6 +2,7 @@ import os
 import io
 import sys
 import random
+import logging
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, TypeVar, Union
@@ -136,15 +137,42 @@ class M2V:
             img_pil = Image.fromarray(data[0])  # h w c
             img_pil.save(output_path)
 
+    def setup_logging(self):
+        """Setup debug logging to a log file in test_dir."""
+        log_dir = os.path.join(self.config.test_dir, "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        log_path = os.path.join(log_dir, f"infer_rank{self.rank}.log")
+        self.logger = logging.getLogger(f"m2v_infer_rank{self.rank}")
+        self.logger.setLevel(logging.INFO)
+        # Avoid adding handlers multiple times
+        if not self.logger.handlers:
+            fh = logging.FileHandler(log_path, mode='a')
+            fh.setLevel(logging.INFO)
+            formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+            fh.setFormatter(formatter)
+            self.logger.addHandler(fh)
+        self.logger.info(f"=== Logging initialized for rank {self.rank} ===")
+
     def run(self):
         cnt = 0
         result_csv = []
-        for batch in track(self.data.dataloader, total=len(self.data.dataloader)):
+        self.setup_logging()
+        total_samples = len(self.data.dataloader)
+        self.logger.info(f"Starting inference: {total_samples} batches, batch_size={self.config.data.batch_size}")
+        for batch in track(self.data.dataloader, total=total_samples):
             try:
+                for i in range(self.config.data.batch_size):
+                    sample_id = batch.get("id", ["unknown"])[i] if "id" in batch else "unknown"
+                    sample_index = batch.get("index", ["unknown"])[i] if "index" in batch else f"{8 * cnt + self.rank:04d}"
+                    self.logger.info(f"[START] id={sample_id}, index={sample_index}, cnt={cnt}, rank={self.rank}")
+
                 video = self.inference(batch)
+
                 for i in range(self.config.data.batch_size):
                     target_path, metadata = self.get_save_name(batch, i, cnt)
-                    
+                    sample_id = batch.get("id", ["unknown"])[i] if "id" in batch else "unknown"
+                    sample_index = batch.get("index", ["unknown"])[i] if "index" in batch else f"{8 * cnt + self.rank:04d}"
+
                     import decord
                     f, h, w, c = video[i].shape
                     ctx = decord.cpu(0)
@@ -157,11 +185,15 @@ class M2V:
                     content_video = content_reader.get_batch(frame_indexes).numpy()
                     concat_video = np.concatenate((rgb_video, video[i], content_video), axis=2)
                     self.write_data(concat_video, target_path)
-                    print(f"Saved to {target_path}")
+                    self.logger.info(f"[DONE] id={sample_id}, index={sample_index}, saved={target_path}")
                     cnt += 1
                     result_csv.append(metadata)
             except Exception as e:
+                self.logger.error(f"[FAILED] batch at cnt={cnt}, rank={self.rank}, error={e}")
+                import traceback
+                self.logger.error(traceback.format_exc())
                 print(f"error {e}, skip")
+        self.logger.info(f"=== Inference finished: {cnt} samples saved on rank {self.rank} ===")
         # if USE_DIST:
         #     all_csv = [None for _ in range(torch.distributed.get_world_size())]
         #     torch.distributed.all_gather_object(all_csv, result_csv)
@@ -206,10 +238,22 @@ class M2V:
         else:
             file_type = "png"
 
-        if "index" in batch:
-            video_name = batch["index"][batch_index] + f".{file_type}"
+        # Use id and index columns from CSV for naming: {id}_{index}.mp4
+        if "id" in batch and "index" in batch:
+            sample_id = batch["id"][batch_index]
+            sample_index = batch["index"][batch_index]
+            # Handle potential nested list from collate_fn (batch_size=1 may produce nested lists)
+            if isinstance(sample_id, list):
+                sample_id = sample_id[0]
+            if isinstance(sample_index, list):
+                sample_index = sample_index[0]
+            video_name = f"{sample_id}_{sample_index}.{file_type}"
+        elif "index" in batch:
+            video_name = batch["index"][batch_index]
+            if isinstance(video_name, list):
+                video_name = video_name[0]
+            video_name = video_name + f".{file_type}"
         else:
-            # video_name = f"R{self.rank}L{cnt}_{data_path}{name_endfix}.{file_type}"
             video_name = f"CamCloneMaster_{(8 * cnt + self.rank):04d}.{file_type}"
         output_path = os.path.join(self.config.test_dir, video_name)
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -235,7 +279,7 @@ if __name__ == "__main__":
         --test_dir /video/zhengmingwu/m2v-diffusers/outputs/m2v_output/102_mvb_10b_8mstep_video \
         --num_frames 77 \
     """
-
+    print("start running")
     set_environments()
     yaml_path = deepcopy(sys.argv[1])
     del sys.argv[1]

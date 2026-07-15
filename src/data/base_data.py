@@ -112,6 +112,8 @@ class DataConfig(InstantiateConfig):
     """Path to dataset."""
     index_column: Optional[str] = None
     """Column name for index."""
+    id_column: Optional[str] = None
+    """Column name for id (used for naming output files)."""
     video_path_column: Optional[str] = None
     """Column name for image path."""
     image_path_column: Optional[str] = None
@@ -253,6 +255,7 @@ class Data:
             self.temporal_unit_size = self.temporal_unit_size * config.temporal_token_merge_size
 
         self.index_column = config.index_column
+        self.id_column = config.id_column
         self.video_path_column = config.video_path_column
         self.image_path_column = config.image_path_column
         self.latent_path_column = config.latent_path_column
@@ -419,6 +422,14 @@ class Data:
                         "clip_prompt_embeds": prompt_embeds,
                     }
                 )
+
+        if self.id_column:
+            ids = items[self.id_column]
+            return_dict.update(
+                {
+                    "id": ids,
+                }
+            )
 
         if self.index_column:
             index = items[self.index_column]
@@ -1349,6 +1360,14 @@ class Data:
             return_dict.update(
                 {
                     "clip_prompt_embeds": prompt_embeds,
+                }
+            )
+
+        if self.id_column:
+            ids = [example["id"] for example in examples]
+            return_dict.update(
+                {
+                    "id": ids,
                 }
             )
 
