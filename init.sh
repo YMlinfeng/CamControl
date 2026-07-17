@@ -6,7 +6,7 @@
 git config --global user.name "YMlinfeng"
 git config --global user.email "xiao102851@163.com"
 
-
+# git commit --amend --reset-author --no-edit
 
 
 # infer代码在： /m2v_intern2/luoyawen/m2v_camclone_v2

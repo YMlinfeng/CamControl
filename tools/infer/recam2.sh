@@ -21,19 +21,18 @@ mkdir -p log
         if [ -d "$SUBDIR" ]; then
             TRANSFORMER_CKPT_PATH="$SUBDIR/ema/transformer.ckpt"
             echo "ckpt is $TRANSFORMER_CKPT_PATH"
-            TEST_DIR="test_dir/demo_recam1"
+            TEST_DIR="test_dir/gen77"
             echo "Test directory is $TEST_DIR"
-            
             # 注意：这里的 \ 续行符后一定不能有空格
             bash scripts/dist_run.sh \
                 python scripts/m2v_dist_infer_i2v_recam.py \
                 /ytech_m2v4_hdd/mengzijie/m2v_camclone_v2/exps/0016--1b_camclonemaster_node_12/config.yml \
-                --data.path /ytech_m2v4_hdd/mengzijie/m2v_camclone_v2/160.csv \
+                --data.path /ytech_m2v4_hdd/mengzijie/recam/160.csv \
                 --data.id_column id \
                 --data.index_column index \
                 --data.t5_prompt_embed_column None \
                 --data.caption_column prompt \
-                --data.ref_path_column ref_videos_old \
+                --data.ref_path_column ref_videos_77 \
                 --data.video_path_column ref_videos2_old \
                 --data.content_ref_path_column ref_videos2_old \
                 --data.num_samples 160 \
@@ -46,7 +45,7 @@ mkdir -p log
                 --width 672 \
                 --height 384 \
                 --fps 15 \
-                --num_frames 41 \
+                --num_frames 77 \
                 --guidance_scale $cfg \
                 --seed 42 \
                 --num_inference_steps 50 \
@@ -64,3 +63,7 @@ mkdir -p log
 
 # [新增] 括号结束。2>&1 表示把报错也算作输出，tee 会把输出同时发给终端和 log/log.txt
 } 2>&1 | tee log/log.txt
+
+
+
+# --data.ref_path_column ref_videos_old \
