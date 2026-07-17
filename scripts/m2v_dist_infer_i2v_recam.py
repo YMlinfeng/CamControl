@@ -178,11 +178,11 @@ class M2V:
                     ctx = decord.cpu(0)
                     rgb_reader = decord.VideoReader(batch['ref_data_paths'][0], ctx=ctx, height=h, width=w)
                     content_reader = decord.VideoReader(batch['content_ref_data_paths'][0], ctx=ctx, height=h, width=w)
-                    length = len(rgb_reader)
-                    frame_indexes = list(range(batch['start_frames'][0], batch['num_frames'][0] * batch['frame_strides'][0], batch['frame_strides'][0]))
-                    frame_indexes = [min(frame_index, length - 1) for frame_index in frame_indexes]
-                    rgb_video = rgb_reader.get_batch(frame_indexes).numpy()
-                    content_video = content_reader.get_batch(frame_indexes).numpy()
+                    frame_indexes = list(range(batch['start_frames'][0], batch['start_frames'][0] + f * batch['frame_strides'][0], batch['frame_strides'][0]))
+                    ref_frame_indexes = [min(frame_index, len(rgb_reader) - 1) for frame_index in frame_indexes]
+                    content_frame_indexes = [min(frame_index, len(content_reader) - 1) for frame_index in frame_indexes]
+                    rgb_video = rgb_reader.get_batch(ref_frame_indexes).numpy()
+                    content_video = content_reader.get_batch(content_frame_indexes).numpy()
                     concat_video = np.concatenate((rgb_video, video[i], content_video), axis=2)
                     self.write_data(concat_video, target_path)
                     self.logger.info(f"[DONE] id={sample_id}, index={sample_index}, saved={target_path}")

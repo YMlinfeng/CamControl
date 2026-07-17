@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 import os, subprocess, json, glob, sys
 
-BASE_DIR = 'test_dir/gen77'
-SRC_DIR = 'test_dir/gen'
-REF77_DIR = os.path.join(BASE_DIR, 'ref77')
-GEN77_DIR = os.path.join(BASE_DIR, 'gen77')
-CONTENT77_DIR = os.path.join(BASE_DIR, 'content77')
+BASE_DIR = 'test_dir/gen'
+SRC_DIR = BASE_DIR
+REF_DIR = os.path.join(BASE_DIR, 'ref')
+GEN_DIR = os.path.join(BASE_DIR, 'gen')
+CONTENT_DIR = os.path.join(BASE_DIR, 'content')
 REF121_DIR = os.path.join(BASE_DIR, 'ref121')
 GEN121_DIR = os.path.join(BASE_DIR, 'gen121')
 CONCAT121_DIR = os.path.join(BASE_DIR, 'concat121')
 
-for d in [REF77_DIR, GEN77_DIR, CONTENT77_DIR, REF121_DIR, GEN121_DIR, CONCAT121_DIR]:
+for d in [REF_DIR, GEN_DIR, CONTENT_DIR, REF121_DIR, GEN121_DIR, CONCAT121_DIR]:
     os.makedirs(d, exist_ok=True)
 
 def get_video_info(path):
@@ -77,9 +77,9 @@ print(f'=== Step 1: Splitting {total} videos into 3 parts ===')
 split_fail = 0
 for i, f in enumerate(mp4_files):
     name = os.path.basename(f)
-    ref_out = os.path.join(REF77_DIR, name)
-    gen_out = os.path.join(GEN77_DIR, name)
-    content_out = os.path.join(CONTENT77_DIR, name)
+    ref_out = os.path.join(REF_DIR, name)
+    gen_out = os.path.join(GEN_DIR, name)
+    content_out = os.path.join(CONTENT_DIR, name)
     
     ok = split_video(f, ref_out, gen_out, content_out)
     if ok:
@@ -90,21 +90,20 @@ for i, f in enumerate(mp4_files):
 
 print(f'Step 1 done. {total - split_fail}/{total} succeeded.\n')
 
-# ---- Step 2: Uniformly sample ref77 and gen77 to 121 frames ----
-ref_files = sorted(glob.glob(os.path.join(REF77_DIR, '*.mp4')))
-gen_files = sorted(glob.glob(os.path.join(GEN77_DIR, '*.mp4')))
+# ---- Step 2: Uniformly sample ref and gen to 121 frames ----
+ref_files = sorted(glob.glob(os.path.join(REF_DIR, '*.mp4')))
+gen_files = sorted(glob.glob(os.path.join(GEN_DIR, '*.mp4')))
 print(f'=== Step 2: Sampling {len(ref_files)} ref and {len(gen_files)} gen videos to 121 frames ===')
 
 sample_fail = 0
-all_pairs = []  # (ref121_path, gen121_path, name) for step 3
+all_pairs = []
 
 for i, ref_f in enumerate(ref_files):
     name = os.path.basename(ref_f)
-    gen_f = os.path.join(GEN77_DIR, name)
+    gen_f = os.path.join(GEN_DIR, name)
     ref121_out = os.path.join(REF121_DIR, name)
     gen121_out = os.path.join(GEN121_DIR, name)
     
-    # Get info for ref
     nf_ref, fps_ref, _, _ = get_video_info(ref_f)
     nf_gen, fps_gen, _, _ = get_video_info(gen_f)
     
@@ -137,9 +136,9 @@ print(f'Step 3 done. {len(all_pairs) - concat_fail}/{len(all_pairs)} succeeded.\
 
 # ---- Summary ----
 print('=== Summary ===')
-print(f'ref77:    {len(glob.glob(os.path.join(REF77_DIR, "*.mp4")))} files')
-print(f'gen77:    {len(glob.glob(os.path.join(GEN77_DIR, "*.mp4")))} files')
-print(f'content77:{len(glob.glob(os.path.join(CONTENT77_DIR, "*.mp4")))} files')
+print(f'ref:      {len(glob.glob(os.path.join(REF_DIR, "*.mp4")))} files')
+print(f'gen:      {len(glob.glob(os.path.join(GEN_DIR, "*.mp4")))} files')
+print(f'content:  {len(glob.glob(os.path.join(CONTENT_DIR, "*.mp4")))} files')
 print(f'ref121:   {len(glob.glob(os.path.join(REF121_DIR, "*.mp4")))} files')
 print(f'gen121:   {len(glob.glob(os.path.join(GEN121_DIR, "*.mp4")))} files')
 print(f'concat121:{len(glob.glob(os.path.join(CONCAT121_DIR, "*.mp4")))} files')
