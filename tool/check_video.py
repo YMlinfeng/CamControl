@@ -75,5 +75,5 @@ def get_video_info(video_path):
 
 
 if __name__ == "__main__":
-    path = "/ytech_m2v4_hdd/mengzijie/m2v_camclone_v2/experiments_recam_data04_121f15fps_20260716_130503/140_reCam_robat_00269_大角度俯视/ref_videos_left_gen_right.mp4"
+    path = "/ytech_m2v4_hdd/mengzijie/recam/content/16_reCam_human2_00425_背面远景.mp4"
     get_video_info(path)
