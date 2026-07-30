@@ -21,13 +21,13 @@ mkdir -p log
         if [ -d "$SUBDIR" ]; then
             TRANSFORMER_CKPT_PATH="$SUBDIR/ema/transformer.ckpt"
             echo "ckpt is $TRANSFORMER_CKPT_PATH"
-            TEST_DIR="test_dir/gen"
+            TEST_DIR="test_dir/gen2"
             echo "Test directory is $TEST_DIR"
             # 注意：这里的 \ 续行符后一定不能有空格
             bash scripts/dist_run.sh \
                 python scripts/m2v_dist_infer_i2v_recam.py \
                 /ytech_m2v4_hdd/mengzijie/m2v_camclone_v2/exps/0016--1b_camclonemaster_node_12/config.yml \
-                --data.path /ytech_m2v4_hdd/mengzijie/recam/12.csv \
+                --data.path /ytech_m2v4_hdd/mengzijie/recam/2.csv \
                 --data.id_column id \
                 --data.index_column index \
                 --data.t5_prompt_embed_column None \
@@ -35,7 +35,7 @@ mkdir -p log
                 --data.ref_path_column ref_videos_77 \
                 --data.video_path_column ref_videos2_old \
                 --data.content_ref_path_column ref_videos2_old \
-                --data.num_samples 15 \
+                --data.num_samples 2 \
                 --data.batch_size 1 \
                 --data.cache_dir None \
                 --data.crop_type None \
@@ -44,7 +44,7 @@ mkdir -p log
                 --negative_prompt "animation, 2d animation, 3d animation, Anime, Cartoon, blurry, deformed, disfigured, low quality, text, collage, grainy, logo, no visual content, blurred effect, striped background, abstract, illustration, computer generated, distorted" \
                 --width 672 \
                 --height 384 \
-                --fps 15 \
+                --fps 25 \
                 --num_frames 77 \
                 --guidance_scale $cfg \
                 --seed 42 \
